@@ -1,0 +1,21 @@
+#docker的配置文件，位置无所谓
+#docker相当于一个小虚拟机,只虚拟了一部分,占用不高
+#作用是在docker上下载一个database
+version: '3.8'
+
+services:
+  db:
+    image: mysql:latest #image是镜像,是hub.docker提供的,:后面是版本号,latest指最新版本
+    environment:
+      MYSQL_ROOT_HOST: '%'
+      MYSQL_DATABASE: twitch
+      MYSQL_ROOT_PASSWORD: secret
+      TZ: UTC
+    volumes: #存在哪
+      - mysql-local:/var/lib/mysql
+    ports:
+      - 3306:3306 #host port : container host
+
+# permanent storage of data.
+volumes:
+  mysql-local: #名字

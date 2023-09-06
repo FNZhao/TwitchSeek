@@ -1,0 +1,51 @@
+spring:
+  jackson:
+    default-property-inclusion: non_null # json cannot include null field
+  cloud:
+    openfeign:
+      oauth2:
+        enabled: true
+        clientRegistrationId: twitch
+      client:
+        config:
+          twitch-api:
+            url: https://api.twitch.tv/helix
+            loggerLevel: basic #会影响log的内容
+            default-request-headers:
+              Client-Id: "YOUR_TWITCH_CLIENT_ID" #Client-Id是一个名字，换成小写或者别的名字也无所谓
+  security:
+    oauth2:
+      client:
+        registration:
+          twitch:
+            authorization-grant-type: client_credentials
+            client-authentication-method: client_secret_post
+            client-id: "YOUR_TWITCH_CLIENT_ID"
+            client-secret: "YOUR_TWITCH_CLIENT_SECRET" #这两个是获取token里需要的参数，命名是规定好的
+        provider:
+          twitch:
+            token-uri: https://id.twitch.tv/oauth2/token
+  datasource: #数据库连接部分
+    url: jdbc:mysql://${DATABASE_URL:localhost}:3306/twitch?createDatabaseIfNotExist=true #db网址,用的jdbc protocol
+    #第二部分是连接的端口,第三部分twitch是database的名字,？是告诉db连接如果还没有这个db的话就创建,我们只创建了db的infrastructure,并没有真正的建库
+    #${DATABASE_URL:localhost},默认是localhost,如果提供了db的url则存到url的db里
+    username: ${DATABASE_USERNAME:root}
+    password: ${DATABASE_PASSWORD:secret} #当整个库deploy到aws之后，这些环境变量就会被读取，否则就是默认. aws在创建app runner时会定义这些plaintext
+    driver-class-name: com.mysql.cj.jdbc.Driver #说明驱动,即为gradle里的driver dependency,即使他是runtime的
+  sql:
+    init:
+      mode: ${INIT_DB:always}
+      schema-locations: "classpath:database-init.sql"
+  cache:
+    caffeine:
+      spec: expireAfterWrite=5s # expiration的时间
+
+logging:
+  level: # when enter this level, log message will be output
+    org.apache.coyote.http11.Http11InputBuffer: DEBUG # Incoming Http requests
+    com.zhaofn.twitch.external.TwitchApiClient: DEBUG #这个也会影响log，之后这些log里的内容就会被map
+    org.springframework.jdbc.core: DEBUG #SQL
+
+#cloud section里的twitch指向了security下面的twitch:，说明openfeign的registration是用的twitch的registration
+#client下面的twitch-api对应的是interface TwitchApiClient里的name
+#security section实现了从twitch网站access token的方法
